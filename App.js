@@ -6,11 +6,14 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   runOnJS,
+  interpolate,
 } from 'react-native-reanimated';
 import {
   PanGestureHandler,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
+import { AntDesign } from '@expo/vector-icons';
+
 
 const clamp = (value, lowerBound, upperBound) => {
   'worklet';
@@ -23,6 +26,7 @@ export const SliderButton = ({
   sliderHeight = 48,
   knobWidth = 40,
   padding = 4,
+  disabled = false,
   label = '',
 }) => {
   const translateX = useSharedValue(0);
@@ -56,6 +60,7 @@ export const SliderButton = ({
           stiffness: 150,
           overshootClamping: true,
         });
+        runOnJS(onDragEnd)();
       }
     },
   });
@@ -69,16 +74,35 @@ export const SliderButton = ({
         width: translateX.value + knobWidth + padding,
       };
     }),
+    activeIconStyle: useAnimatedStyle(() => {
+      return {
+        opacity: interpolate(translateX.value, [0, totalSwipeableWidth - knobWidth - padding, totalSwipeableWidth], [1, 1, 0]),
+        transform: [{ translateX: interpolate(translateX.value, [0, totalSwipeableWidth - knobWidth - padding, totalSwipeableWidth], [0, 0, knobWidth]) }]
+      };
+    }),
+    inactiveIconStyle: useAnimatedStyle(() => {
+      return {
+        opacity: interpolate(translateX.value, [0, totalSwipeableWidth - knobWidth - padding, totalSwipeableWidth], [0, 0, 1]),
+        transform: [{ translateX: interpolate(translateX.value, [0, totalSwipeableWidth - knobWidth, totalSwipeableWidth], [-knobWidth, -knobWidth, 0]) }]
+      };
+    }),
   }
 
   return (
     <GestureHandlerRootView>
       <View style={[styles.slider, { height: sliderHeight, width }]}>
-        {/* <Animated.View style={[styles.progress, animatedStyles.progressStyle]} /> */}
+        <Animated.View style={[styles.progress, animatedStyles.progressStyle]} />
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
         >
-          <Animated.View style={[styles.knob,animatedStyles.scrollTranslationStyle, { height: knobWidth, width: knobWidth, left: padding }]} />
+          <Animated.View style={[styles.knob, animatedStyles.scrollTranslationStyle, { height: knobWidth, width: knobWidth, left: padding }]} >
+            <Animated.View style={[{ position: "absolute", }, animatedStyles.activeIconStyle]}>
+              <AntDesign name="arrowright" size={24} color="white" />
+            </Animated.View>
+            <Animated.View style={[{ position: "absolute" }, animatedStyles.inactiveIconStyle]}>
+              <AntDesign name="check" size={24} color="white" />
+            </Animated.View>
+          </Animated.View>
         </PanGestureHandler>
         <View style={styles.labelContainer}>
           <Text style={styles.text}>{label}</Text>
@@ -94,13 +118,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#183F3F",
     justifyContent: 'center',
   },
-  // progress: {
-  //   ...StyleSheet.absoluteFillObject,
-  //   backgroundColor: "#183F3F",
-  //   borderRadius: 14,
-  //   position: 'absolute',
-  //   zIndex: 1,
-  // },
+  progress: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#183F3F",
+    borderRadius: 14,
+    position: 'absolute',
+    zIndex: 1,
+  },
   knob: {
     borderRadius: 10,
     backgroundColor: "#E76A40",
@@ -124,6 +148,10 @@ const styles = StyleSheet.create({
     height: 18,
   },
 });
+
+
+
+
 
 
 
